@@ -21,14 +21,17 @@ func main() {
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
 
+	userService.SaveAvatar(3, "images/1-profile.png")
+
 	userHandler := handler.NewUserHandler(userService)
 
 	router := gin.Default()
 	api := router.Group("/api/v1")
 
-	api.POST("/users", userHandler.RegisterUser) //note: Register
-	api.POST("/sessions", userHandler.Login)     //note: Login
-	api.POST("/email_checkers", userHandler.CheckEmailAvailability)
+	api.POST("/users", userHandler.RegisterUser)                    //note: Register
+	api.POST("/sessions", userHandler.Login)                        //note: Login
+	api.POST("/email_checkers", userHandler.CheckEmailAvailability) // note: Check email is available
+	api.POST("/avatars", userHandler.UploadAvatar)                  // note: Upload avatar profile
 
 	router.Run()
 }
