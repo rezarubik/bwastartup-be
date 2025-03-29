@@ -3,10 +3,13 @@ package main
 import (
 	"bwastartup/auth"
 	"bwastartup/handler"
+	"bwastartup/helper"
 	"bwastartup/user"
-	"fmt"
 	"log"
+	"net/http"
+	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -24,23 +27,6 @@ func main() {
 	userService := user.NewService(userRepository)
 	authService := auth.NewService()
 
-	// token, err := authService.ValidateToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozfQ.k98dBbHioAp-jkA4wMzEXlu3Z0U1F93gJdffoY4Ha4o")
-	token, err := authService.ValidateToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxN30.L089-fiu9ey1Zy2RTrj-cOnqtHLM8g0M2Qo6aw7HFjk")
-	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println("ERROR")
-		fmt.Println("ERROR")
-	}
-	if token.Valid {
-		fmt.Println("VALID")
-		fmt.Println("VALID")
-		fmt.Println("VALID")
-	} else {
-		fmt.Println("INVALID")
-		fmt.Println("INVALID")
-		fmt.Println("INVALID")
-	}
-
 	// fmt.Println(authService.GenerateToken(1001))
 
 	// userService.SaveAvatar(3, "images/1-profile.png")
@@ -50,10 +36,58 @@ func main() {
 	router := gin.Default()
 	api := router.Group("/api/v1")
 
-	api.POST("/users", userHandler.RegisterUser)                    //note: Register
-	api.POST("/sessions", userHandler.Login)                        //note: Login
-	api.POST("/email_checkers", userHandler.CheckEmailAvailability) // note: Check email is available
-	api.POST("/avatars", userHandler.UploadAvatar)                  // note: Upload avatar profile
+	api.POST("/users", userHandler.RegisterUser)                                             //note: Register
+	api.POST("/sessions", userHandler.Login)                                                 //note: Login
+	api.POST("/email_checkers", userHandler.CheckEmailAvailability)                          // note: Check email is available
+	api.POST("/avatars", authMiddleware(authService, userService), userHandler.UploadAvatar) // note: Upload avatar profile
 
 	router.Run()
+}
+
+// note: Auth Middleware
+func authMiddleware(authService auth.Service, userService user.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// todo: Ambil nilai header Authorization: Bearer tokentokentoken
+		authHeader := c.GetHeader("Authorization")
+		if !strings.Contains(authHeader, "Bearer") {
+			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		// todo: Dari header Authorization, kita ambil tokennya
+		tokenString := ""
+		arrayToken := strings.Split(authHeader, " ")
+		if len(arrayToken) == 2 {
+			tokenString = arrayToken[1]
+		}
+
+		// todo: Validasi Token
+		token, err := authService.ValidateToken(tokenString)
+		if err != nil {
+			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		claim, ok := token.Claims.(jwt.MapClaims)
+		if !ok || !token.Valid {
+			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		// todo: Ambil user dari db berdasarkan user_id lewat service
+		userID := int(claim["user_id"].(float64))
+
+		user, err := userService.GetUserByID(userID)
+		if err != nil {
+			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		// todo: kita set context isinya user
+		c.Set("currentUser", user)
+	}
 }
