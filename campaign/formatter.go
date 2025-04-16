@@ -121,3 +121,11 @@ func FormatCampaigns(campaigns []Campaign) []CampaignFormatter {
 	}
 	return campaignsFormatter
 }
+
+/* ------------------------ // start: Create Campaign ----------------------- */
+// todo: Analisis Langkah
+// * tangkap parameter dari user ke input struct
+// 
+// * panggil service, parameternya input struct (dan juga buat slug)
+// * panggil repository untuk simpan data campaign baru
+/* ------------------------- // end: Create Campaign ------------------------ */

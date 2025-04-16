@@ -34,6 +34,23 @@ func main() {
 	campaignService := campaign.NewService(campaignRepository)
 	authService := auth.NewService()
 
+	// todo: Testing create campaign directly (example)
+	// inputCampaign := campaign.CreateCampaignInput{}
+	// inputCampaign.Name = "Pengadaan Campaign"
+	// inputCampaign.ShortDescription = "Short Descriptin"
+	// inputCampaign.Description = "Long Description"
+	// inputCampaign.Perks = "Perks satu, dua, tiga"
+	// inputCampaign.GoalAmount = 1000000
+
+	// inputUser, _ := userService.GetUserByID(3)
+	// inputCampaign.User = inputUser
+
+	// _, err = campaignService.CreateCampaign(inputCampaign)
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	log.Fatal()
+	// }
+
 	// fmt.Println(authService.GenerateToken(1001))
 
 	// userService.SaveAvatar(3, "images/1-profile.png")
@@ -50,10 +67,11 @@ func main() {
 	api.POST("/email_checkers", userHandler.CheckEmailAvailability)                          // note: Check email is available
 	api.POST("/avatars", authMiddleware(authService, userService), userHandler.UploadAvatar) // note: Upload avatar profile
 
-	// start: Campaign
+	/* --------------------------- // start: Campaign --------------------------- */
 	api.GET("/campaigns", campaignHandler.GetCampaigns)
 	api.GET("/campaigns/:id", campaignHandler.GetCampaign)
-	// end: Campaign
+	api.POST("/campaigns", authMiddleware(authService, userService), campaignHandler.CreateCampaign)
+	/* ---------------------------- // end: Campaign ---------------------------- */
 
 	router.Run()
 }
