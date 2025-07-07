@@ -146,15 +146,6 @@ func (h *campaignHandler) UploadImage(c *gin.Context) {
 	var input campaign.CreateCampaignImageInput
 	fmt.Println("UploadImage called", input.IsPrimary)
 
-	// Validasi manual untuk 'is_primary'
-	isPrimaryRaw := c.PostForm("is_primary")
-	if isPrimaryRaw == "" {
-		data := gin.H{"is_primary": "is_primary is required"}
-		response := helper.APIResponse("Failed to update campaign", http.StatusUnprocessableEntity, "error", data)
-		c.JSON(http.StatusUnprocessableEntity, response)
-		return
-	}
-
 	err := c.ShouldBind(&input)
 
 	if err != nil {
